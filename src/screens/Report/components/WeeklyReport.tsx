@@ -69,11 +69,7 @@ function WeekChart({days, metric, animationKey, marked}: {
     <View>
       <View style={styles.chart}>
         {/* 목표선 */}
-        <View pointerEvents="none" style={[styles.goalLine, {bottom: (goal / max) * CHART_HEIGHT, borderColor: theme.accent}]}>
-          <Text style={[styles.goalLabel, {color: theme.accentStrong, backgroundColor: theme.surface}]}>
-            목표 {metric === 'steps' ? goal.toLocaleString() : `${goal / 60}시간`}
-          </Text>
-        </View>
+        <View pointerEvents="none" style={[styles.goalLine, {bottom: (goal / max) * CHART_HEIGHT, borderColor: theme.accent}]} />
         {days.map(({label, key, future}, index) => {
           const value = values[index];
           const color = marked
@@ -109,6 +105,13 @@ function WeekChart({days, metric, animationKey, marked}: {
             </View>
           );
         })}
+      </View>
+      {/* 목표선 설명: 선 위에 쓰면 막대 숫자와 겹쳐서 그래프 아래에 둔다. */}
+      <View style={styles.goalLegend}>
+        <View style={[styles.goalLegendLine, {borderColor: theme.accent}]} />
+        <Text style={[styles.goalLegendText, {color: theme.textMuted}]}>
+          목표 {metric === 'steps' ? `${goal.toLocaleString()}걸음` : `${goal / 60}시간`}
+        </Text>
       </View>
     </View>
   );
@@ -168,7 +171,9 @@ export default function WeeklyReport() {
   const sleepCaption = avgSleep !== null && prevSleep !== null
     ? (() => {
       const diff = Math.round(avgSleep - prevSleep);
-      return diff === 0 ? '지난주와 비슷해요' : `지난주보다 ${sleepText(Math.abs(diff))} ${diff > 0 ? '↑' : '↓'}`;
+      // 카드 한 줄에 들어가게 1시간이 넘으면 '1.2시간'처럼 줄여 쓴다.
+      const amount = Math.abs(diff) >= 60 ? `${Math.round((Math.abs(diff) / 60) * 10) / 10}시간` : `${Math.abs(diff)}분`;
+      return diff === 0 ? '지난주와 비슷해요' : `지난주보다 ${amount} ${diff > 0 ? '↑' : '↓'}`;
     })()
     : undefined;
 
@@ -296,7 +301,9 @@ const styles = StyleSheet.create({
   column: {flex: 1, justifyContent: 'flex-end'},
   barValue: {fontSize: 10, fontWeight: '600', marginBottom: 4, textAlign: 'center'},
   goalLine: {borderStyle: 'dashed', borderTopWidth: 1, left: 0, position: 'absolute', right: 0},
-  goalLabel: {fontSize: 10, fontWeight: '700', paddingHorizontal: 4, position: 'absolute', right: 0, top: -8},
+  goalLegend: {alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'flex-end', marginTop: 10},
+  goalLegendLine: {borderStyle: 'dashed', borderTopWidth: 1, width: 18},
+  goalLegendText: {fontSize: 11, fontWeight: '600'},
   labels: {flexDirection: 'row', gap: 10, marginTop: 8},
   dayCell: {alignItems: 'center', flex: 1, gap: 4},
   dayLabel: {fontSize: 12, fontWeight: '700', textAlign: 'center'},

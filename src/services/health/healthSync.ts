@@ -55,13 +55,16 @@ function sinceFor(state: SyncState, now: number) {
 
 let running: Promise<SyncOutcome> | null = null;
 
-// 데모 앱(nownow-demo): 서버에 넣어 둔 30일 데모 데이터를 휴대폰 실제 기록이 덮어쓰지 않게 동기화를 끈다.
-// 갤럭시워치 → 헬스 커넥트 → 서버 흐름은 원래 NowNow 앱에서 보여 준다.
-const DEMO_DISABLE_SYNC = true;
+// 데모 앱(nownow-demo): 서버에 넣어 둔 30일 데모 데이터를 휴대폰 실제 기록이 덮어쓰지 않게
+// 걸음 수·수면·심박·산소포화도는 보내지 않는다.
+// 혈압만 보낸다: 시연에서 오므론으로 방금 잰 혈압이 서버에 들어가야 챗봇이 그 수치로 답한다.
+// 예전 실제 기록이 데모 계정에 섞이지 않게 최근 24시간 측정분만 보낸다.
+const DEMO_BLOOD_PRESSURE_ONLY = true;
+const DEMO_BLOOD_PRESSURE_WINDOW_MS = DAY;
 
 async function run(force: boolean): Promise<SyncOutcome> {
   const native = NativeModules.HealthConnectModule;
-  if (DEMO_DISABLE_SYNC || Platform.OS !== 'android' || typeof native?.syncHealthData !== 'function') {
+  if (Platform.OS !== 'android' || typeof native?.syncHealthData !== 'function') {
     return {status: 'unavailable'};
   }
   const {data} = await supabase.auth.getSession();
@@ -76,8 +79,18 @@ async function run(force: boolean): Promise<SyncOutcome> {
 
   try {
     const result: NativeSyncResult = await native.syncHealthData(state.token, sinceFor(state, now));
-    // 워치 혈압 연동을 검증할 때까지 혈압은 직접 입력으로만 저장한다.
-    const bodies = buildSyncRequests(result, {includeBloodPressure: false});
+    const bodies = DEMO_BLOOD_PRESSURE_ONLY
+      ? buildSyncRequests({
+        ...result,
+        heartRate: [],
+        oxygen: [],
+        sleep: [],
+        steps: undefined,
+        deleted: [],
+        bloodPressure: result.bloodPressure.filter(row => now - Date.parse(row.time) <= DEMO_BLOOD_PRESSURE_WINDOW_MS),
+      }, {includeBloodPressure: true})
+      // 워치 혈압 연동을 검증할 때까지 혈압은 직접 입력으로만 저장한다.
+      : buildSyncRequests(result, {includeBloodPressure: false});
     for (const body of bodies) {
       await request('POST', '/api/health/records', {body});
     }
