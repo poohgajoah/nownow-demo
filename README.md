@@ -21,7 +21,7 @@
 > - 데모 앱에서도 일일 리포트 화면은 휴대폰 헬스 커넥트를 직접 읽어 보여 줘요. 일일 리포트 시연은 원래 NowNow 앱으로 해 주세요.
 
 <p align="center">
-  <img src="src/assets/images/charactor.png" width="140" alt="뿡뿡이" />
+  <img src="https://github.com/user-attachments/assets/8e5bcaf2-8256-46fe-886d-67034465a021" width="140" alt="뿡뿡이" />
 </p>
 
 <h1 align="center">NowNow (나우나우)</h1>
